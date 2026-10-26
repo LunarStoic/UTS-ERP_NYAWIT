@@ -1,0 +1,35 @@
+name: nyawit-erp
+
+services:
+  mysql:
+    image: mysql:8.4
+    environment:
+      MYSQL_USER: ${DB_USER:-nyawit}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-nyawit_dev_password}
+      MYSQL_DATABASE: ${DB_NAME:-nyawit_erp}
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-nyawit_dev_password}
+    ports:
+      - '${DB_PORT:-3308}:3306'
+    volumes:
+      - mysqldata:/var/lib/mysql
+    healthcheck:
+      test: 
+        [
+          'CMD', 
+          'mysql',
+          '--protocol=TCP',
+          '-h',
+          '127.0.0.1',
+          '-u',
+          '${DB_USER:-nyawit}',
+          '-p${DB_PASSWORD:-nyawit_dev_password}',
+          '${DB_NAME:-nyawit_erp}',
+          '-e',
+          'SELECT 1'
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  mysqldata:

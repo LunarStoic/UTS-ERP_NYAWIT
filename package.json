@@ -1,0 +1,25 @@
+{
+  "name": "nyawit-erp",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": {
+    "infra:up": "docker compose up -d --wait",
+    "infra:down": "docker compose down",
+    "infra:reset": "docker compose down -v",
+    "mikro-orm": "node --env-file=.env node_modules/@mikro-orm/cli/cli.js",
+    "migration:create": "npm run mikro-orm -- migration:create --blank",
+    "migration:up": "npm run mikro-orm -- migration-up",
+    "migration:down": "npm run mikro-orm -- migration-down",
+    "migration:list": "npm run mikro-orm -- migration-list"
+  },
+  "type": "module",
+  "devDependencies": {
+    "@mikro-orm/cli": "^7.2.5",
+    "@mikro-orm/core": "^7.2.5",
+    "@mikro-orm/migrations": "^7.2.5",
+    "@mikro-orm/mysql": "^7.2.5",
+    "@types/node": "^26.6.5",
+    "tsx": "4.23.15",
+    "typescript": "7.0.2"
+  }
+}
