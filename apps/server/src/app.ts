@@ -1,7 +1,8 @@
-import { randomUUID } from 'node:crypto';
 
 import express from 'express';
-import {type Pool, type ResultSetHeader, type RowDataPacket } from 'mysql2/promise';
+import {type Pool, type RowDataPacket } from 'mysql2/promise';
+
+import { Warehouse, WarehouseRuleError } from './modules/warehouse/domain/warehouse/warehouse.js'; 
 
 interface WarehouseRow extends RowDataPacket {
     id: string;
@@ -27,8 +28,28 @@ function toWarehouse(row: WarehouseRow) {
     };
 }
 
+/** Membentuk kembali objek domain dari satu baris tabel */
+function toDomain(row: WarehouseRow): Warehouse {
+    return Warehouse.reconstitute(row.id, Number(row.version), {
+        code: row.code,
+        name: row.name,
+        address: row.address,
+        isActive: row.is_active === 1,
+        createdAt: row.created_at,
+        updatedAt: row.updated_at
+    });
+}
+
 function errorBody(code: string, message: string) {
     return { error: { code, message, details: {} } };
+}
+
+/** Mengubah pelanggaran aturan bisnis menjadi jawaban 422; error lain dilempar lagi */
+function sendRuleError(res: express.Response, error: unknown): void {
+    if(error instanceof WarehouseRuleError) {
+        res.status(422).json(errorBody(error.code, error.message));
+    }
+    throw error;
 }
 
 //cari gudnag berdasarkan id
@@ -49,22 +70,20 @@ export function createApp(pool: Pool) {
             res.status(400).json(errorBody('MALFORMED_REQUEST', 'Kode dan nama wajib diisi.'));
             return;
         }
-        if (code.trim().length === 0) {
-            res.status(422).json(errorBody('WAREHOUSE_INVALID_CODE', 'Kode gudang tidak boleh kosong.'));
-            return;
-        }
-        if (name.trim().length === 0) {
-            res.status(422).json(errorBody('WAREHOUSE_INVALID_NAME', 'Nama gudang tidak boleh kosong.'));
+        
+        let warehouse:  Warehouse;
+        try {
+            warehouse = Warehouse.create({ code, name, address: typeof address === 'string' ? address : null });
+        } catch (error) {
+            sendRuleError(res, error);
             return;
         }
 
-        const id = randomUUID();
-        const now = new Date();
         try {
-            await pool.execute<ResultSetHeader>(
+            await pool.execute(
                 `INSERT INTO warehouse_warehouses (id, code, name, address, created_at, updated_at)
                 VALUES (?, ?, ?, ?, ?, ?)`,
-                [id, code, name, typeof address === 'string' ? address : null, now, now],
+                [warehouse.id, warehouse.code, warehouse.name, warehouse.address, warehouse.createdAt, warehouse.updatedAt],
             );
         } catch (error) {
             if ((error as { code?: string }).code === 'ER_DUP_ENTRY') {
@@ -74,7 +93,7 @@ export function createApp(pool: Pool) {
             throw error;
         }
 
-        const created = await findWarehouseById(pool, id);
+        const created = await findWarehouseById(pool, warehouse.id);
         res.status(201).json({ data: toWarehouse(created!), meta: {} });
     });
 
@@ -113,16 +132,20 @@ export function createApp(pool: Pool) {
             res.status(422).json(errorBody('NOT_FOUND', 'Gudang tidak ditemukan'));
             return;
         }
-        if(name !== undefined && name.trim().length === 0) {
-            res.status(422).json(errorBody('WAREHOUSE_INVALID_NAME', 'Nama gudang tidak boleh kosong.'));
+        
+        const warehouse = toDomain(row);
+        try {
+            warehouse.update({ name, address });
+        } catch (error) {
+            sendRuleError(res, error);
             return;
         }
 
         await pool.execute(
             'UPDATE warehouse_warehouses SET name = ?, address = ?, version = version + 1, updated_at = ? WHERE id = ?',
-            [name ?? row.name, address === undefined ? row.address : address, new Date(), row.id]
+            [warehouse.name, warehouse.address, warehouse.updatedAt, warehouse.id]
         )
-        const updated = await findWarehouseById(pool, row.id);
+        const updated = await findWarehouseById(pool, warehouse.id);
         res.status(200).json({ data:toWarehouse(updated!), meta: {} });
     });
 
@@ -133,13 +156,16 @@ export function createApp(pool: Pool) {
             res.status(422).json(errorBody('NOT_FOUND', 'Gudang tidak ditemukan.'));
             return;
         }
-        if(row.is_active !== 1) {
+
+        const warehouse = toDomain(row);
+        warehouse.activate();
+        if(warehouse.isActive !== (row.is_active === 1)) {
             await pool.execute(
-                'UPDATE warehouse_warehouses SET is_active = TRUE, version = version + 1, updated_at = ? WHERE id = ?',
-                [new Date(), row.id]
+                'UPDATE warehouse_warehouses SET is_active = ?, version = version + 1, updated_at = ? WHERE id = ?',
+                [warehouse.isActive, warehouse.updatedAt, warehouse.id]
             );
         }
-        const updated = await findWarehouseById(pool, row.id);
+        const updated = await findWarehouseById(pool, warehouse.id);
         res.status(200).json({ data: toWarehouse(updated!), meta: {} });
     })
 
@@ -150,14 +176,17 @@ export function createApp(pool: Pool) {
             res.status(422).json(errorBody('NOT_FOUND', 'Gudang tidak ditemukan.'));
             return;
         }
-        if(row.is_active === 1) {
+
+        const warehouse = toDomain(row);
+        warehouse.activate();
+        if(warehouse.isActive !== (row.is_active === 1)) {
             await pool.execute(
-                'UPDATE warehouse_warehouses SET is_active = FALSE, version = version + 1, updated_at = ? WHERE id = ?',
-                [new Date(), row.id]
+                'UPDATE warehouse_warehouses SET is_active = ?, version = version + 1, updated_at = ? WHERE id = ?',
+                [warehouse.isActive, warehouse.updatedAt, warehouse.id]
             );
         }
-        const updated = await findWarehouseById(pool, row.id);
-        res.status(200).json({ data: toWarehouse(updated!), meta: {} });        
+        const updated = await findWarehouseById(pool, warehouse.id);
+        res.status(200).json({ data: toWarehouse(updated!), meta: {} });      
     });
 
     return app;
