@@ -1,6 +1,6 @@
-import mysql from 'mysql2/promise';
-
 import { createApp } from './app.js';
+import { createOrm } from './orm.js';
+import { WarehouseRepository } from './modules/warehouse/infrastructure/persistence/WarehouseRepository.js';
 
 const databaseUrl = process.env.DATABASE_URL;
 
@@ -9,9 +9,9 @@ if (!databaseUrl) {
 }
 
 const port = Number(process.env.PORT ?? 4000);
-const pool = mysql.createPool({ uri: databaseUrl, timezone: 'Z' });
 
-const app = createApp(pool);
+const orm = await createOrm(databaseUrl);
+const app = createApp(new WarehouseRepository(orm));
 
 app.listen(port, () => {
     console.log(`server listening on port ${port}`);
