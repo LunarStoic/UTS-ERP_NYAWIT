@@ -116,6 +116,7 @@ export function createApp(warehouses: WarehouseRepository) {
         }
 
         warehouse.activate();
+        console.log(warehouse.isActive)
 
         const saved = await warehouses.save(warehouse);
         res.status(200).json({ data: toWarehouse(saved), meta: {} });
@@ -129,7 +130,7 @@ export function createApp(warehouses: WarehouseRepository) {
             return;
         }
 
-        warehouse.activate();
+        warehouse.deactivate();
         const saved = await warehouses.save(warehouse);
         res.status(200).json({ data: toWarehouse(saved), meta: {} });      
     });

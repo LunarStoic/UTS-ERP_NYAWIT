@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from 'react';
+import { useEffect, useState, type FormEvent } from "react";
 
 interface Warehouse {
   id: string;
@@ -12,7 +12,7 @@ interface Warehouse {
 }
 
 interface ErrorBody {
-  error?: {message?: string};
+  error?: { message?: string };
 }
 
 export default function App() {
@@ -22,9 +22,9 @@ export default function App() {
   const [actionError, setActionError] = useState<string | null>(null);
 
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [code, setCode] = useState('');
-  const [name, setName] = useState('');
-  const [address, setAddress] = useState('');
+  const [code, setCode] = useState("");
+  const [name, setName] = useState("");
+  const [address, setAddress] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
 
@@ -32,28 +32,30 @@ export default function App() {
     setIsLoading(true);
     setLoadError(null);
     try {
-      const response = await fetch('/api/v1/warehouses');
+      const response = await fetch("/api/v1/warehouses");
       if (!response.ok) {
         throw new Error(`Status ${response.status}`);
       }
       const body = (await response.json()) as { data: Warehouse[] };
       setWarehouses(body.data);
     } catch {
-      setLoadError('Daftar gudang tidak dapat dimuat. Periksa apakah server berjalan.');
+      setLoadError(
+        "Daftar gudang tidak dapat dimuat. Periksa apakah server berjalan.",
+      );
     } finally {
       setIsLoading(false);
     }
   }
 
   useEffect(() => {
-    void loadWarehouses();
+    loadWarehouses();
   }, []);
 
   function resetForm() {
     setEditingId(null);
-    setCode('');
-    setName('');
-    setAddress('');
+    setCode("");
+    setName("");
+    setAddress("");
     setFormError(null);
   }
 
@@ -61,7 +63,7 @@ export default function App() {
     setEditingId(warehouse.id);
     setCode(warehouse.code);
     setName(warehouse.name);
-    setAddress(warehouse.address ?? '');
+    setAddress(warehouse.address ?? "");
     setFormError(null);
   }
 
@@ -70,29 +72,33 @@ export default function App() {
     setFormError(null);
     setIsSaving(true);
     try {
-      const addressValue = address.trim() === '' ? null : address;
+      const addressValue = address.trim() === "" ? null : address;
       const response =
         editingId === null
-          ? await fetch('/api/v1/warehouses', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ code, name, address: addressValue }),
-          })
-        : await fetch('/api/v1/warehouses/${editingId}', {
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ name, address: addressValue })
-        });
+          ? await fetch(`/api/v1/warehouses`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ code, name, address: addressValue }),
+            })
+          : await fetch(`/api/v1/warehouses/${editingId}`, {
+              method: "PATCH",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ name, address: addressValue }),
+            });
       if (!response.ok) {
-        const body = (await response.json().catch(() => null)) as ErrorBody | null;
-        setFormError(body?.error?.message ?? 'Gudang gagal disimpan. Silakan coba lagi.');
+        const body = (await response
+          .json()
+          .catch(() => null)) as ErrorBody | null;
+        setFormError(
+          body?.error?.message ?? "Gudang gagal disimpan. Silakan coba lagi.",
+        );
         return;
       }
 
       resetForm();
       await loadWarehouses();
     } catch {
-      setFormError('Gudang gagal disimpan. Periksa apakah server berjalan.');
+      setFormError("Gudang gagal disimpan. Periksa apakah server berjalan.");
     } finally {
       setIsSaving(false);
     }
@@ -101,76 +107,103 @@ export default function App() {
   async function setActive(warehouse: Warehouse, active: boolean) {
     setActionError(null);
     try {
-      const response = await fetch(`/api/v1/warehouses/${warehouse.id}/${active ? 'activate' : 'deactivate'}`, {
-        method: 'POST',
-      });
-      if(!response.ok) {
-        const body = (await response.json().catch(() => null)) as ErrorBody | null;
-        setActionError(body?.error?.message ?? 'Status gudang gagal diubah. Silakan coba lagi.');
+      const response = await fetch(
+        `/api/v1/warehouses/${warehouse.id}/${active ? "activate" : "deactivate"}`,
+        {
+          method: "POST",
+        },
+      );
+      if (!response.ok) {
+        const body = (await response
+          .json()
+          .catch(() => null)) as ErrorBody | null;
+        setActionError(
+          body?.error?.message ??
+            "Status gudang gagal diubah. Silakan coba lagi.",
+        );
         return;
       }
       await loadWarehouses();
     } catch {
-      setActionError('Status gudang gagal diubah. Periksa apakah server berjalan.')
+      setActionError(
+        "Status gudang gagal diubah. Periksa apakah server berjalan.",
+      );
     }
   }
-  
+
   return (
     <main className="mx-auto max-w-3xl p-6">
       <h1 className="text-2xl font-semibold">Gudang</h1>
-      <form onSubmit={handleSubmit} className="mt-6 grid gap-3 rounded border border-gray-300 p-4">
-        <h2 className="font-medium">{editingId === null ? 'Tambah gudang' : 'Ubah gudang'}</h2>
-        <label className="grid gap-1 text-sm">Kode<input
-          value={code}
-          onChange={(event) => setCode(event.target.value)}
-          readOnly={editingId !== null}
-          className="rounded border border-gray-300 px-2 py-1 read-only:bg-gray-100"
-        />
+      <form
+        onSubmit={handleSubmit}
+        className="mt-6 grid gap-3 rounded border border-gray-300 p-4"
+      >
+        <h2 className="font-medium">
+          {editingId === null ? "Tambah gudang" : "Ubah gudang"}
+        </h2>
+        <label className="grid gap-1 text-sm">
+          Kode
+          <input
+            value={code}
+            onChange={(event) => setCode(event.target.value)}
+            readOnly={editingId !== null}
+            className="rounded border border-gray-300 px-2 py-1 read-only:bg-gray-100"
+          />
         </label>
         <label className="grid gap-1 text-sm">
-        Nama
-        <input
-        value={name}
-        onChange={(event) => setName(event.target.value)}
-        className="rounded border border-gray-300 px-2 py-1"
-        />
+          Nama
+          <input
+            value={name}
+            onChange={(event) => setName(event.target.value)}
+            className="rounded border border-gray-300 px-2 py-1"
+          />
         </label>
         <label className="grid gap-1 text-sm">
-        Alamat
-        <input
-        value={address}
-        onChange={(event) => setAddress(event.target.value)}
-        className="rounded border border-gray-300 px-2 py-1"
-        />
+          Alamat
+          <input
+            value={address}
+            onChange={(event) => setAddress(event.target.value)}
+            className="rounded border border-gray-300 px-2 py-1"
+          />
         </label>
         {formError ? (
-        <p role="alert" className="text-sm text-red-700">
-        {formError}
-        </p>
+          <p role="alert" className="text-sm text-red-700">
+            {formError}
+          </p>
         ) : null}
         <div className="flex gap-2">
-           <button
-          type="submit"
-          disabled={isSaving}
-          className="rounded bg-green-700 px-3 py-1 text-white disabled:opacity-50"
+          <button
+            type="submit"
+            disabled={isSaving}
+            className="rounded bg-green-700 px-3 py-1 text-white disabled:opacity-50"
           >
-            {isSaving ? 'Menyimpan...' : 'Simpan'}
+            {isSaving ? "Menyimpan..." : "Simpan"}
           </button>
           {editingId !== null ? (
-            <button type="button" onClick={resetForm} className="rounded border border-gray-300 px-3 py-1">
+            <button
+              type="button"
+              onClick={resetForm}
+              className="rounded border border-gray-300 px-3 py-1"
+            >
               Batal
             </button>
           ) : null}
         </div>
-       
       </form>
       <section className="mt-8">
         <h2 className="font-medium">Daftar gudang</h2>
-        {isLoading ? <p className="mt-2 text-sm text-gray-600">Memuat...</p> : null}
+        {isLoading ? (
+          <p className="mt-2 text-sm text-gray-600">Memuat...</p>
+        ) : null}
         {loadError ? (
-        <p role="alert" className="mt-2 text-sm text-red-700">
-        {loadError}
-        </p>
+          <p role="alert" className="mt-2 text-sm text-red-700">
+            {loadError}
+          </p>
+        ) : null}
+        {actionError ? (
+          <p role="alert" className="mt-2 text-sm text-red-700">
+            {actionError}
+          </p>
         ) : null}
         {actionError ? (
           <p role="alert" className="mt-2 text-sm text-red-700">
@@ -178,30 +211,48 @@ export default function App() {
           </p>
         ) : null}
         {!isLoading && !loadError && warehouses.length === 0 ? (
-        <p className="mt-2 text-sm text-gray-600">Belum ada gudang.</p>
+          <p className="mt-2 text-sm text-gray-600">Belum ada gudang.</p>
         ) : null}
         {warehouses.length > 0 ? (
-        <table className="mt-2 w-full text-left text-sm">
-          <thead>
-            <tr className="border-b border-gray-300">
-              <th className="py-1">Kode</th>
-              <th>Nama</th>
-              <th>Alamat</th>
-              <th>Status</th>
-              <th>Tindakan</th>
-            </tr>
-          </thead>
-          <tbody>
-          {warehouses.map((warehouse) => (
-            <tr key={warehouse.id} className="border-b border-gray-200">
-              <td className="py-1">{warehouse.code}</td>
-              <td>{warehouse.name}</td>
-              <td>{warehouse.address ?? '-'}</td>
-              <td>{warehouse.isActive ? 'Aktif' : 'Nonaktif'}</td>
-            </tr>
-          ))}
-          </tbody>
-        </table>
+          <table className="mt-2 w-full text-left text-sm">
+            <thead>
+              <tr className="border-b border-gray-300">
+                <th className="py-1">Kode</th>
+                <th>Nama</th>
+                <th>Alamat</th>
+                <th>Status</th>
+                <th>Tindakan</th>
+              </tr>
+            </thead>
+            <tbody>
+              {warehouses.map((warehouse) => (
+                <tr key={warehouse.id} className="border-b border-gray-200">
+                  <td className="py-1">{warehouse.code}</td>
+                  <td>{warehouse.name}</td>
+                  <td>{warehouse.address ?? "-"}</td>
+                  <td>{warehouse.isActive ? "Aktif" : "Nonaktif"}</td>
+                  <td className="space-x-2">
+                    <button
+                      type="button"
+                      onClick={() => startEditing(warehouse)}
+                      aria-label={`Ubah ${warehouse.name}`}
+                      className="text-green-800 underline"
+                    >
+                      Ubah
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => void setActive(warehouse, !warehouse.isActive)}
+                      aria-label={`${warehouse.isActive ? 'Nonaktifkan' : 'Aktifkan'} ${warehouse.name}`}
+                      className="text-green-800 underline"
+                    >
+                      {warehouse.isActive ? 'Nonaktifkan' : 'Aktifkan'}
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         ) : null}
       </section>
     </main>

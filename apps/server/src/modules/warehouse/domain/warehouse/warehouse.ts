@@ -37,6 +37,7 @@ export class Warehouse {
             throw new WarehouseRuleError('WAREHOUSE_INVALID_NAME', 'Nama gudang tidak boleh kosong.');
          }
          const now = new Date();
+         console.log(params.address, "saya")
          return new Warehouse(randomUUID(), 1, {
             code: params.code,
             name: params.name,
@@ -61,7 +62,7 @@ export class Warehouse {
     }
 
     get address(): string | null {
-        return this.props.name;
+        return this.props.address;
     }
 
     get isActive(): boolean {
