@@ -1,5 +1,6 @@
 import { MikroORM } from '@mikro-orm/mysql';
 
+import { PartnerEntitySchema, PartnerRoleEntitySchema } from './modules/partner/infrastructure/persistence/partner.entity-schema.js';
 import { WarehouseEntitySchema } from './modules/warehouse/infrastructure/persistence/warehouse.entity-schema.js';
 import { ProductEntitySchema } from './modules/product/infrastructure/persistence/product.entity-schema.js';
 
@@ -7,7 +8,7 @@ import { ProductEntitySchema } from './modules/product/infrastructure/persistenc
 export function createOrm(databaseUrl: string): Promise<MikroORM> {
     return MikroORM.init({
         clientUrl: databaseUrl,
-        entities: [WarehouseEntitySchema, ProductEntitySchema],
+        entities: [WarehouseEntitySchema, ProductEntitySchema, PartnerEntitySchema, PartnerRoleEntitySchema],
         forceUtcTimezone: true,
     });
 }
