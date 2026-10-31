@@ -1,5 +1,6 @@
 import { NavLink, Navigate, Route, Routes } from 'react-router';
 
+import PartnerPage from './PartnerPage.js';
 import ProductPage from './ProductPage.js'
 import WarehousePage from "./WarehousePage.js";
 
@@ -16,11 +17,15 @@ export default function App() {
           <NavLink to="/products" className={navLinkClassName}>
             Produk
           </NavLink>
+          <NavLink to="/partners" className={navLinkClassName}>
+            Partner
+          </NavLink>
         </div>
       </nav>
       <Routes>
         <Route path="/warehouses" element={<WarehousePage />} />
         <Route path="/products" element={<ProductPage />} />
+        <Route path="/partners" element={<PartnerPage />} />
         <Route path="*" element={<Navigate to="/warehouses" replace />} />
       </Routes>
     </div>
