@@ -53,31 +53,34 @@ export class PartnerRepository {
     */
     async add(partner: Partner): Promise<void> {
         const em = this.orm.em.fork();
-        em.persist(
-            em.create(PartnerEntitySchema, {
-                id: partner.id,
-                code: partner.code,
-                name: partner.name,
-                phone: partner.phone,
-                address: partner.address,
-                isActive: partner.isActive,
-                version: partner.version,
-                createdAt: partner.createdAt,
-                updatedAt: partner.updatedAt,
-            }),
-        );
-        await em.flush();
-        for (const role of partner.roles) {
+        await em.transactional(async (em) => {
             em.persist(
-                em.create(PartnerRoleEntitySchema, {
-                    partnerId: partner.id,
-                    roleCode: role.roleCode,
-                    isActive: role.isActive,
-                    createdAt: role.createdAt,
+                em.create(PartnerEntitySchema, {
+                    id: partner.id,
+                    code: partner.code,
+                    name: partner.name,
+                    phone: partner.phone,
+                    address: partner.address,
+                    isActive: partner.isActive,
+                    version: partner.version,
+                    createdAt: partner.createdAt,
+                    updatedAt: partner.updatedAt,
                 }),
             );
-        }
-        await em.flush();
+            await em.flush();
+
+            for (const role of partner.roles) {
+                em.persist(
+                    em.create(PartnerRoleEntitySchema, {
+                        partnerId: partner.id,
+                        roleCode: role.roleCode,
+                        isActive: role.isActive,
+                        createdAt: role.createdAt,
+                    }),
+                );
+            }
+            await em.flush();
+        });
     }
 
     /** Menyimpan perubahan mitra dan perannya, lalu mengembalikan mitra dengan versi yang tersimpan. */
