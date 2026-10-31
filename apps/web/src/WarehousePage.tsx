@@ -132,7 +132,7 @@ export default function WarehousePage() {
   }
 
   return (
-    <main className="mx-auto max-w-3xl p-6">
+    <section className="min-w-0">
       <h1 className="text-2xl font-semibold">Gudang</h1>
       <form
         onSubmit={handleSubmit}
@@ -214,47 +214,51 @@ export default function WarehousePage() {
           <p className="mt-2 text-sm text-gray-600">Belum ada gudang.</p>
         ) : null}
         {warehouses.length > 0 ? (
-          <table className="mt-2 w-full text-left text-sm">
-            <thead>
-              <tr className="border-b border-gray-300">
-                <th className="py-1">Kode</th>
-                <th>Nama</th>
-                <th>Alamat</th>
-                <th>Status</th>
-                <th>Tindakan</th>
-              </tr>
-            </thead>
-            <tbody>
-              {warehouses.map((warehouse) => (
-                <tr key={warehouse.id} className="border-b border-gray-200">
-                  <td className="py-1">{warehouse.code}</td>
-                  <td>{warehouse.name}</td>
-                  <td>{warehouse.address ?? "-"}</td>
-                  <td>{warehouse.isActive ? "Aktif" : "Nonaktif"}</td>
-                  <td className="space-x-2">
-                    <button
-                      type="button"
-                      onClick={() => startEditing(warehouse)}
-                      aria-label={`Ubah ${warehouse.name}`}
-                      className="text-green-800 underline"
-                    >
-                      Ubah
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => void setActive(warehouse, !warehouse.isActive)}
-                      aria-label={`${warehouse.isActive ? 'Nonaktifkan' : 'Aktifkan'} ${warehouse.name}`}
-                      className="text-green-800 underline"
-                    >
-                      {warehouse.isActive ? 'Nonaktifkan' : 'Aktifkan'}
-                    </button>
-                  </td>
+          <div className="erp-table-scroll">
+            <table className="mt-2 w-full text-left text-sm">
+              <thead>
+                <tr className="border-b border-gray-300">
+                  <th className="py-1">Kode</th>
+                  <th>Nama</th>
+                  <th>Alamat</th>
+                  <th>Status</th>
+                  <th>Tindakan</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {warehouses.map((warehouse) => (
+                  <tr key={warehouse.id} className="border-b border-gray-200">
+                    <td className="py-1">{warehouse.code}</td>
+                    <td>{warehouse.name}</td>
+                    <td>{warehouse.address ?? "-"}</td>
+                    <td>{warehouse.isActive ? "Aktif" : "Nonaktif"}</td>
+                    <td className="space-x-2">
+                      <button
+                        type="button"
+                        onClick={() => startEditing(warehouse)}
+                        aria-label={`Ubah ${warehouse.name}`}
+                        className="text-green-800 underline"
+                      >
+                        Ubah
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          void setActive(warehouse, !warehouse.isActive)
+                        }
+                        aria-label={`${warehouse.isActive ? "Nonaktifkan" : "Aktifkan"} ${warehouse.name}`}
+                        className="text-green-800 underline"
+                      >
+                        {warehouse.isActive ? "Nonaktifkan" : "Aktifkan"}
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         ) : null}
       </section>
-    </main>
+    </section>
   );
 }

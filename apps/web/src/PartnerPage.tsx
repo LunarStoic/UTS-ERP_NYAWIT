@@ -216,7 +216,7 @@ export default function PartnerPage() {
   }
   
   return (
-    <main className="mx-auto max-w-4xl p-6">
+    <section className="min-w-0">
       <h1 className="text-2xl font-semibold">Mitra</h1>
       <form
         onSubmit={handleSubmit}
@@ -320,6 +320,7 @@ export default function PartnerPage() {
           <p className="mt-2 text-sm text-gray-600">Belum ada mitra.</p>
         ) : null}
         {partners.length > 0 ? (
+          <div className="erp-table-scroll">
           <table className="mt-2 w-full text-left text-sm">
             <thead>
               <tr className="border-b border-gray-300">
@@ -361,8 +362,9 @@ export default function PartnerPage() {
               ))}
             </tbody>
           </table>
+          </div>
         ) : null}
       </section>
-    </main>
+    </section>
   );
 }

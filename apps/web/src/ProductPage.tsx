@@ -134,7 +134,7 @@ export default function ProductPage() {
   }
   
   return (
-    <main className="mx-auto max-w-3xl p-6">
+    <section className="min-w-0">
       <h1 className="text-2xl font-semibold">Produk</h1>
       <form
         onSubmit={handleSubmit}
@@ -212,6 +212,7 @@ export default function ProductPage() {
           <p className="mt-2 text-sm text-gray-600">Belum ada produk.</p>
         ) : null}
         {products.length > 0 ? (
+          <div className="erp-table-scroll">
           <table className="mt-2 w-full text-left text-sm">
             <thead>
               <tr className="border-b border-gray-300">
@@ -251,8 +252,9 @@ export default function ProductPage() {
               ))}
             </tbody>
           </table>
+          </div>
         ) : null}
       </section>
-    </main>
+    </section>
   );
 }

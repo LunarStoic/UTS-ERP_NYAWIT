@@ -1,1 +1,264 @@
 @import "tailwindcss";
+
+/* Nilai shell mengikuti styles/tokens.css pada web aktif. */
+:root {
+    font-family: Inter, system-ui, sans-serif;
+    font-size: 16px;
+    color: #0f172a;
+    background: #f8fafc;
+}
+
+html {
+    -webkit-text-size-adjust: 100%;
+}
+
+body {
+    margin: 0;
+    min-width: 320px;
+    padding-inline: env(safe-area-inset-left) env(safe-area-inset-right);
+}
+
+:focus-visible {
+    outline: 2px solid #2563eb;
+    outline-offset: 2px;
+}
+
+.erp-shell {
+    min-height: 100vh;
+}
+
+.erp-header {
+    position: sticky;
+    top: 0;
+    z-index: 30;
+    height: 64px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding-inline: 12px;
+    border-bottom: 1px solid #e2e8f0;
+    background: #fff;
+    box-shadow: 0 1px 2px rgb(15 23 42 / 5%);
+}
+
+.erp-brand {
+    flex-shrink: 0;
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.erp-header-divider {
+    display: none;
+    height: 24px;
+    border-left: 1px solid #e2e8f0;
+}
+
+.erp-current-title {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: #475569;
+    font-size: 14px;
+}
+
+.erp-icon-button {
+    display: grid;
+    place-items: center;
+    width: 40px;
+    height: 40px;
+    flex-shrink: 0;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.erp-icon-button:hover,
+.erp-collapse-button:hover {
+    background: #f1f5f9;
+}
+
+.erp-body {
+    display: flex;
+}
+
+.erp-sidebar {
+    display: none;
+}
+
+.erp-module-menu {
+    flex: 1;
+    overflow-y: auto;
+    padding: 12px;
+}
+
+.erp-module-link {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-height: 44px;
+    padding-inline: 12px;
+    border-radius: 8px;
+    background: #1e293b;
+    color: #fff;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.erp-module-link svg {
+    flex-shrink: 0;
+}
+
+.erp-sidebar-footer {
+    border-top: 1px solid #e2e8f0;
+    padding: 12px;
+}
+
+.erp-collapse-button {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-height: 44px;
+    width: 100%;
+    padding-inline: 12px;
+    border-radius: 8px;
+}
+
+.erp-sidebar-collapsed .erp-module-link,
+.erp-sidebar-collapsed .erp-collapse-button {
+    justify-content: center;
+}
+
+.erp-main {
+    flex: 1;
+    min-width: 0;
+    padding: 16px;
+}
+
+.erp-tabs {
+    display: flex;
+    gap: 4px;
+    overflow-x: auto;
+    margin-bottom: 16px;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.erp-tabs a {
+    display: flex;
+    align-items: center;
+    height: 44px;
+    padding-inline: 12px;
+    white-space: nowrap;
+    border-bottom: 2px solid transparent;
+}
+
+.erp-tabs a[aria-current="page"] {
+    border-color: #2563eb;
+    color: #0f172a;
+}
+
+.erp-tabs a:hover {
+    color: #0f172a;
+    background: #f1f5f9;
+}
+
+.erp-table-scroll {
+    width: 100%;
+    overflow-x: auto;
+}
+
+.erp-table-scroll table {
+    min-width: 600px;
+}
+
+.erp-drawer {
+    position: fixed;
+    inset: 0 auto 0 0;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    width: min(20rem, 85vw);
+    max-width: none;
+    height: 100dvh;
+    max-height: none;
+    background: #fff;
+    color: #0f172a;
+    box-shadow: 0 20px 25px -5px rgb(15 23 42 / 10%);
+}
+
+.erp-drawer[open] {
+    display: flex;
+    flex-direction: column;
+}
+
+.erp-drawer::backdrop {
+    background: rgb(15 23 42 / 40%);
+}
+
+.erp-drawer-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+    height: 64px;
+    padding-inline: 16px;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.erp-skip {
+    position: fixed;
+    top: 8px;
+    left: 8px;
+    z-index: 50;
+    transform: translateY(-200%);
+}
+
+.erp-skip:focus {
+    transform: none;
+    padding: 8px 12px;
+    background: #fff;
+    border-radius: 8px;
+}
+
+@media (min-width: 640px) {
+    .erp-header {
+        padding-inline: 16px;
+    }
+
+    .erp-header-divider {
+        display: block;
+    }
+}
+
+@media (min-width: 768px) {
+    .erp-main {
+        padding: 24px;
+    }
+}
+
+@media (min-width: 1024px) {
+    .erp-menu-button {
+        display: none;
+    }
+
+    .erp-sidebar {
+        display: flex;
+        flex-direction: column;
+        position: sticky;
+        top: 64px;
+        height: calc(100vh - 64px);
+        width: 244px;
+        flex-shrink: 0;
+    }
+
+    .erp-sidebar-collapsed {
+        width: 72px;
+    }
+}
+
+@media (pointer: coarse) {
+    input,
+    select,
+    textarea {
+        font-size: 16px;
+    }
+}
