@@ -11,7 +11,7 @@ import {
 
 import PartnerPage from "./PartnerPage.js";
 import ProductPage from "./ProductPage.js";
-import WarehousePage from "./WarehousePage.js";
+import WarehousePage, { WarehouseCreatePage, WarehouseDetailPage, WarehouseEditPage } from "./WarehousePage.js";
 
 export default function App() {
   const [collapsed, setCollapsed] = useState(false);
@@ -119,6 +119,9 @@ export default function App() {
           </nav>
           <Routes>
             <Route path="/master-data/warehouses" element={<WarehousePage />} />
+            <Route path="/master-data/warehouses/new" element={<WarehouseCreatePage />} />
+            <Route path="/master-data/warehouses/:id" element={<WarehouseDetailPage />} />
+            <Route path="/master-data/warehouses/:id/edit" element={<WarehouseEditPage />} />
             <Route path="/master-data/products" element={<ProductPage />} />
             <Route path="/master-data/partners" element={<PartnerPage />} />
             <Route
