@@ -12,3 +12,5 @@ export interface PurchaseReceiptAcceptedV1Payload {
   requestLoanDeduction: boolean;
 }
 export { recordPurchaseReceipt } from './record-purchase-receipt.js';
+
+export { dispatchForShipment } from './dispatch-for-shipment.js';

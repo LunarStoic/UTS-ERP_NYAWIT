@@ -1,3 +1,4 @@
+import { registerShipmentRoutes } from './modules/sales/shipment-routes.js';
 import { registerInventoryRoutes } from './modules/inventory/inventory-routes.js';
 
 import express from 'express';
@@ -27,5 +28,6 @@ export function createApp(repositories: AppRepositories, orm: MikroORM) {
     registerPartnerRoutes(app, repositories.partners);
     registerPurchaseReceiptRoutes(app, orm, repositories);
     registerInventoryRoutes(app, orm);
+    registerShipmentRoutes(app, orm, repositories);
     return app;
 }

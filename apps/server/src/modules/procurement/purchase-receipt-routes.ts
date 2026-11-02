@@ -1,3 +1,4 @@
+import { correctLoadingInventoryCosts } from '../sales/index.js';
 import { createHash, randomUUID } from 'node:crypto';
 import type { MikroORM } from '@mikro-orm/mysql';
 import type { Express } from 'express';
@@ -125,12 +126,13 @@ export function registerPurchaseReceiptRoutes(app: Express, orm: MikroORM, maste
           (id, product_id, supplier_id, source_purchase_receipt_id, effective_date,
            unit_price_microrupiah_per_kg, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)`,
           [randomUUID(), receipt.productId, receipt.supplierId, id, receipt.receiptDate, receipt.unitPrice.toString(), receipt.createdAt]);
-        await recordPurchaseReceipt(em, {
+        const inventory = await recordPurchaseReceipt(em, {
           purchaseReceiptId: receipt.id, documentNumber: receipt.documentNumber, receiptDate: receipt.receiptDate,
           supplierId: receipt.supplierId, productId: receipt.productId, warehouseId: receipt.warehouseId,
           quantityGrams: receipt.quantity.toString(), unitPriceMicroRupiahPerKg: receipt.unitPrice.toString(),
           totalAmountRupiah: receipt.totalAmount.toString(), requestLoanDeduction: false,
         });
+        await correctLoadingInventoryCosts(em, inventory.affectedShipments);
         const rows = await em.execute<ReceiptRow[]>(receiptSelect + ' WHERE id = ?', [id]);
         return toJson(rows[0]!);
       });

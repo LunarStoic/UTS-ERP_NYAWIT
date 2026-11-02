@@ -1,3 +1,4 @@
+import { correctLoadingInventoryCosts } from '../apps/server/src/modules/sales/index.js';
 import { createOrm } from '../apps/server/src/orm.js';
 import { recordPurchaseReceipt } from '../apps/server/src/modules/inventory/index.js';
 const databaseUrl = process.env.DATABASE_URL;
@@ -16,13 +17,16 @@ try {
     FROM procurement_purchase_receipts WHERE status = 'ACCEPTED'
     ORDER BY receipt_date, created_at, id`);
   for (const receipt of receipts) {
-    await orm.em.fork().transactional(em => recordPurchaseReceipt(em, {
+    await orm.em.fork().transactional(async em => {
+      const inventory = await recordPurchaseReceipt(em, {
       purchaseReceiptId: receipt.id, documentNumber: receipt.document_number,
       receiptDate: receipt.receipt_date, supplierId: receipt.supplier_id,
       productId: receipt.product_id, warehouseId: receipt.warehouse_id,
       quantityGrams: receipt.quantity_grams, unitPriceMicroRupiahPerKg: receipt.unit_price_microrupiah_per_kg,
       totalAmountRupiah: receipt.total_amount_rupiah, requestLoanDeduction: false,
-    }));
+      });
+      await correctLoadingInventoryCosts(em, inventory.affectedShipments);
+    });
     console.log('Diperiksa: ' + receipt.document_number);
   }
   console.log('Pemeriksaan penerimaan lama selesai.');
