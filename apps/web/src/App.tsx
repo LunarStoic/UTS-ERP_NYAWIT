@@ -1,4 +1,5 @@
-import { Menu, Package, PanelLeftClose, PanelLeftOpen, X, ReceiptText } from "lucide-react";
+import InventoryPage from "./InventoryPage.js";
+import { Menu, Package, PanelLeftClose, PanelLeftOpen, X, ReceiptText, Boxes } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import {
   Link,
@@ -29,7 +30,8 @@ export default function App() {
   const drawerRef = useRef<HTMLDialogElement>(null);
   const location = useLocation();
   const isProcurement = location.pathname.startsWith("/procurement/");
-  const title = isProcurement ? "Penerimaan Pembelian" : location.pathname.startsWith("/master-data/products")
+  const isInventory = location.pathname.startsWith("/inventory/");
+  const title = isInventory ? (location.pathname.endsWith("/movements") ? "Pergerakan Stok" : "Saldo Stok") : isProcurement ? "Penerimaan Pembelian" : location.pathname.startsWith("/master-data/products")
     ? "Produk"
     : location.pathname.startsWith("/master-data/partners")
       ? "Mitra"
@@ -89,7 +91,7 @@ export default function App() {
             <Link
               to="/master-data/products"
               className="erp-module-link"
-              aria-current={isProcurement ? undefined : "page"}
+              aria-current={isProcurement || isInventory ? undefined : "page"}
               aria-label="Data Master"
               title={collapsed ? "Data Master" : undefined}
             >
@@ -103,6 +105,12 @@ export default function App() {
               title={collapsed ? "Pembelian" : undefined}>
               <ReceiptText size={20} aria-hidden="true" />
               <span className={collapsed ? "sr-only" : undefined}>Pembelian</span>
+            </Link>
+            <Link to="/inventory/balances" className="erp-module-link"
+              aria-current={isInventory ? "page" : undefined} aria-label="Persediaan"
+              title={collapsed ? "Persediaan" : undefined}>
+              <Boxes size={20} aria-hidden="true" />
+              <span className={collapsed ? "sr-only" : undefined}>Persediaan</span>
             </Link>
           </nav>
           <div className="erp-sidebar-footer">
@@ -129,14 +137,19 @@ export default function App() {
         </aside>
 
         <main id="main-content" tabIndex={-1} className="erp-main">
-          <nav aria-label={isProcurement ? "Navigasi Pembelian" : "Navigasi Data Master"} className="erp-tabs">
-            {isProcurement ? <NavLink to="/procurement/purchase-receipts">Penerimaan Pembelian</NavLink> : <>
+          <nav aria-label={isInventory ? "Navigasi Persediaan" : isProcurement ? "Navigasi Pembelian" : "Navigasi Data Master"} className="erp-tabs">
+            {isInventory ? <>
+              <NavLink to="/inventory/balances">Saldo Stok</NavLink>
+              <NavLink to="/inventory/movements">Pergerakan Stok</NavLink>
+            </> : isProcurement ? <NavLink to="/procurement/purchase-receipts">Penerimaan Pembelian</NavLink> : <>
               <NavLink to="/master-data/products">Produk</NavLink>
               <NavLink to="/master-data/partners">Mitra</NavLink>
               <NavLink to="/master-data/warehouses">Gudang</NavLink>
             </>}
           </nav>
           <Routes>
+            <Route path="/inventory/balances" element={<InventoryPage />} />
+            <Route path="/inventory/movements" element={<InventoryPage movements />} />
             <Route path="/procurement/purchase-receipts" element={<PurchaseReceiptPage />} />
             <Route path="/procurement/purchase-receipts/new" element={<PurchaseReceiptCreatePage />} />
             <Route path="/procurement/purchase-receipts/:id" element={<PurchaseReceiptDetailPage />} />
@@ -224,7 +237,7 @@ export default function App() {
           <Link
             to="/master-data/products"
             className="erp-module-link"
-            aria-current={isProcurement ? undefined : "page"}
+            aria-current={isProcurement || isInventory ? undefined : "page"}
             onClick={() => {
               drawerRef.current?.close();
             }}
@@ -236,6 +249,10 @@ export default function App() {
             aria-current={isProcurement ? "page" : undefined}
             onClick={() => drawerRef.current?.close()}>
             <ReceiptText size={20} aria-hidden="true" /><span>Pembelian</span>
+          </Link>
+          <Link to="/inventory/balances" className="erp-module-link"
+            aria-current={isInventory ? "page" : undefined} onClick={() => drawerRef.current?.close()}>
+            <Boxes size={20} aria-hidden="true" /><span>Persediaan</span>
           </Link>
         </nav>
       </dialog>

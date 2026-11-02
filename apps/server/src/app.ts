@@ -1,3 +1,4 @@
+import { registerInventoryRoutes } from './modules/inventory/inventory-routes.js';
 
 import express from 'express';
 import type { MikroORM } from '@mikro-orm/mysql';
@@ -25,5 +26,6 @@ export function createApp(repositories: AppRepositories, orm: MikroORM) {
     registerProductRoutes(app, repositories.products);
     registerPartnerRoutes(app, repositories.partners);
     registerPurchaseReceiptRoutes(app, orm, repositories);
+    registerInventoryRoutes(app, orm);
     return app;
 }
