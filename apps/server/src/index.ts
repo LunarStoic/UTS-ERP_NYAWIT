@@ -18,7 +18,7 @@ const app = createApp({
     warehouses: new WarehouseRepository(orm),
     products: new ProductRepository(orm),
     partners: new PartnerRepository(orm), 
-});
+}, orm);
 
 app.listen(port, () => {
     console.log(`server listening on port ${port}`);

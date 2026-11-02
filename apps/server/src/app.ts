@@ -1,5 +1,7 @@
 
 import express from 'express';
+import type { MikroORM } from '@mikro-orm/mysql';
+import { registerPurchaseReceiptRoutes } from './modules/procurement/purchase-receipt-routes.js';
 
 import type { PartnerRepository } from './modules/partner/infrastructure/persistence/partner.repository.js';
 import { registerPartnerRoutes } from './modules/partner/interfaces/http/partner-routes.js';
@@ -15,12 +17,13 @@ export interface AppRepositories {
     partners: PartnerRepository;
 }
 
-export function createApp(repositories: AppRepositories) {
+export function createApp(repositories: AppRepositories, orm: MikroORM) {
     const app = express();
     app.use(express.json());
 
     registerWarehouseRoutes(app, repositories.warehouses);
     registerProductRoutes(app, repositories.products);
     registerPartnerRoutes(app, repositories.partners);
+    registerPurchaseReceiptRoutes(app, orm, repositories);
     return app;
 }
