@@ -8,7 +8,7 @@ export default defineConfig({
     extensions: [Migrator],
     migrations: {
         path: 'database/migrations',
-        glob: '!{*.d}.{js,ts}'
+        glob: '!(*.d).{js,ts}'
     }
 });
 
