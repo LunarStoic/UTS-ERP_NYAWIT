@@ -1,3 +1,4 @@
+import DeliveryPreview from './DeliveryPreview.js';
 import { Plus } from 'lucide-react';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { Link, useLocation, useNavigate, useParams, useSearchParams } from 'react-router';
@@ -571,6 +572,7 @@ export function ShipmentDetailPage() {
           >
             Lihat pergerakan stok pengiriman
           </Link>
+          {shipment.status === 'IN_TRANSIT' && <DeliveryPreview shipmentId={shipment.id} />}
         </>
       )}
     </section>

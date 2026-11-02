@@ -1,3 +1,4 @@
+import { DeliverySettlementCalculator } from './domain/shipment/delivery-settlement-calculator.js';
 import { createHash, randomUUID } from 'node:crypto';
 import type { Express } from 'express';
 import type { MikroORM } from '@mikro-orm/mysql';
@@ -339,6 +340,61 @@ export function registerShipmentRoutes(app: Express, orm: MikroORM, masters: App
           ).toString('base64url')
         : null;
     res.status(200).json({ data: page.map(toView), meta: { nextCursor, hasMore, limit } });
+  });
+
+
+  app.post('/api/v1/sales/shipments/:id/complete-delivery/preview', async (req, res) => {
+    const optional = (value: unknown): bigint | null | undefined => {
+      if (value === undefined || value === null || value === '') return null;
+      return typeof value === 'string' && /^[0-9]+$/.test(value) ? BigInt(value) : undefined;
+    };
+    const body = req.body ?? {};
+    const ticket = optional(body.ticketQuantityGrams);
+    const sorting = optional(body.sortingDeductionGrams);
+    const reject = optional(body.rejectQuantityGrams);
+    const price = optional(body.sellingPriceMicroRupiahPerKg);
+    if ([ticket, sorting, reject, price].some(value => value === undefined)) {
+      res.status(400).json({ error: { code: 'MALFORMED_REQUEST', message: 'Jumlah dan harga harus angka bulat tidak negatif bila diisi.', details: {} } });
+      return;
+    }
+    const rows = await orm.em.fork().execute<Record<string, unknown>[]>(selectShipment + ' WHERE id = ?', [req.params.id]);
+    const row = rows[0];
+    if (!row) {
+      res.status(404).json({ error: { code: 'NOT_FOUND', message: 'Pengiriman tidak ditemukan.', details: {} } });
+      return;
+    }
+    // Product tahap ini belum memiliki konfigurasi reject target; default aktifnya null.
+    const preview: { shipmentId: unknown; documentNumber: unknown; status: unknown; rejectTarget: null;
+      breakdown: Record<string, string> | null; issue: { code: string; message: string } | null } = {
+      shipmentId: row.id, documentNumber: row.documentNumber, status: row.status,
+      rejectTarget: null, breakdown: null, issue: null,
+    };
+    if (row.status !== 'IN_TRANSIT') {
+      preview.issue = { code: 'SHIPMENT_NOT_IN_TRANSIT', message: 'Pengiriman ini sudah selesai atau tidak lagi dalam perjalanan.' };
+    } else if (ticket != null && price != null) {
+      if (reject != null && reject > 0n) {
+        preview.issue = { code: 'REJECT_TARGET_NOT_CONFIGURED', message: 'Produk ini belum memiliki Produk Reject, sehingga reject tidak dapat diproses.' };
+      } else {
+        const result = DeliverySettlementCalculator.calculate({
+          loadingGrams: BigInt(row.loadingQuantityGrams as string), ticketGrams: ticket,
+          sortingDeductionGrams: sorting ?? 0n, rejectGrams: reject ?? 0n,
+          sellingPriceMicroRupiahPerKg: price,
+        });
+        if (result.kind === 'invalid') preview.issue = { code: result.code, message: result.message };
+        else {
+          const b = result.breakdown;
+          preview.breakdown = {
+            loadingQuantityGrams: b.loadingGrams.toString(), ticketQuantityGrams: b.ticketGrams.toString(),
+            shrinkageQuantityGrams: b.shrinkageGrams.toString(), shrinkageBasisPoints: b.shrinkageBasisPoints.toString(),
+            sortingDeductionGrams: b.sortingDeductionGrams.toString(), rejectQuantityGrams: b.rejectGrams.toString(),
+            acceptedQuantityGrams: b.acceptedGrams.toString(), netQuantityGrams: b.netGrams.toString(),
+            sellingPriceMicroRupiahPerKg: b.sellingPriceMicroRupiahPerKg.toString(),
+            grossRevenueRupiah: b.grossRevenueRupiah.toString(), discountRupiah: b.discountRupiah.toString(), netRevenueRupiah: b.netRevenueRupiah.toString(),
+          };
+        }
+      }
+    }
+    res.json({ data: preview, meta: {} });
   });
 
   app.get('/api/v1/sales/shipments/:id', async (req, res) => {
