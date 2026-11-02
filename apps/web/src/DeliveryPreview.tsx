@@ -3,7 +3,18 @@ interface Preview {
   breakdown: Record<string, string> | null;
   issue: { code: string; message: string } | null;
 }
-export default function DeliveryPreview({ shipmentId }: { shipmentId: string }) {
+export default function DeliveryPreview({ shipmentId, shipmentVersion, onCompleted }: {
+  shipmentId: string;
+  shipmentVersion: number;
+  onCompleted: () => void;
+}) {
+  const [settlementDate, setSettlementDate] = useState(() => {
+    const now = new Date();
+    return now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0')
+      + '-' + String(now.getDate()).padStart(2, '0');
+  });
+  const [saving, setSaving] = useState(false);
+  const [reloadRequired, setReloadRequired] = useState(false);
   const [ticket, setTicket] = useState('');
   const [sorting, setSorting] = useState('');
   const [price, setPrice] = useState('');
@@ -52,15 +63,52 @@ export default function DeliveryPreview({ shipmentId }: { shipmentId: string }) 
     }
   }
   const b = preview?.breakdown;
+  async function complete() {
+    if (saving || pending || reloadRequired || !b || preview?.issue) return;
+    if (!settlementDate) { setError('Tanggal Tiket (Bongkar) wajib diisi.'); return; }
+    setError('');
+    setSaving(true);
+    try {
+      const response = await fetch('/api/v1/sales/shipments/' + shipmentId + '/complete-delivery', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'If-Match': String(shipmentVersion) },
+        body: JSON.stringify({
+          ticketQuantityGrams: (BigInt(ticket) * 1000n).toString(),
+          sortingDeductionGrams: (BigInt(sorting || '0') * 1000n).toString(),
+          rejectQuantityGrams: '0',
+          sellingPriceMicroRupiahPerKg: (BigInt(price) * 1_000_000n).toString(),
+          settlementDate,
+        }),
+      });
+      const body = await response.json();
+      if (!response.ok) {
+        setError(body.error?.message ?? 'Hasil bongkar gagal disimpan.');
+        if (['VERSION_CONFLICT', 'SHIPMENT_INVALID_STATE_TRANSITION'].includes(body.error?.code))
+          setReloadRequired(true);
+        return;
+      }
+      onCompleted();
+    } catch {
+      setError('Hasil penyimpanan belum dapat dipastikan. Muat ulang detail sebelum mencoba kembali.');
+      setReloadRequired(true);
+    } finally {
+      setSaving(false);
+    }
+  }
+
   return (
     <section className="receipt-card delivery-preview" aria-label="Tiket/Bongkar">
       <h2>Tiket/Bongkar</h2>
       <p>
-        Periksa rincian tiket terlebih dahulu. Pratinjau belum menyimpan hasil bongkar atau
-        menyelesaikan pengiriman.
+        Periksa rincian tiket, lalu selesaikan pengiriman untuk menyimpan hasil bongkar.
+        Pratinjau saja belum mengubah dokumen.
       </p>
       <form onSubmit={(event) => void calculate(event)}>
-        <fieldset className="receipt-form" disabled={pending}>
+        <fieldset className="receipt-form" disabled={pending || saving}>
+          <label>
+            Tanggal Tiket (Bongkar)
+            <input required type="date" value={settlementDate} onChange={(e) => setSettlementDate(e.target.value)} />
+          </label>
           <label>
             Jumlah Bongkar / Tiket (kg)
             <input
@@ -103,6 +151,11 @@ export default function DeliveryPreview({ shipmentId }: { shipmentId: string }) 
           <div className="receipt-form-actions">
             <button className="receipt-button receipt-primary" type="submit">
               {pending ? 'Menghitung…' : 'Hitung Pratinjau'}
+            </button>{' '}
+            <button className="receipt-button receipt-primary" type="button"
+              disabled={!b || Boolean(preview?.issue) || reloadRequired}
+              onClick={() => void complete()}>
+              {saving ? 'Menyimpan…' : 'Selesaikan Pengiriman'}
             </button>
           </div>
         </fieldset>
@@ -112,6 +165,7 @@ export default function DeliveryPreview({ shipmentId }: { shipmentId: string }) 
           {error}
         </p>
       )}
+      {reloadRequired && <a className="receipt-back" href={'/sales/shipments/' + shipmentId}>Muat Ulang Detail</a>}
       {preview?.issue && (
         <p role="alert" className="shipment-warning">
           {preview.issue.message}

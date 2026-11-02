@@ -413,6 +413,26 @@ export function registerShipmentRoutes(app: Express, orm: MikroORM, masters: App
         });
       return;
     }
-    res.json({ data: toView(rows[0]), meta: {} });
+    const settlements = await orm.em.fork().execute<Record<string, unknown>[]>(`SELECT id,
+      shipment_id AS shipmentId, receiving_reference_number AS receivingReferenceNumber,
+      DATE_FORMAT(settlement_date, '%Y-%m-%d') AS settlementDate,
+      CAST(accepted_quantity_grams AS CHAR) AS acceptedQuantityGrams,
+      CAST(reject_quantity_grams AS CHAR) AS rejectQuantityGrams,
+      CAST(shrinkage_quantity_grams AS CHAR) AS shrinkageQuantityGrams,
+      CAST(selling_price_microrupiah_per_kg AS CHAR) AS sellingPriceMicroRupiahPerKg,
+      CAST(gross_revenue_rupiah AS CHAR) AS grossRevenueRupiah,
+      CAST(discount_rupiah AS CHAR) AS discountRupiah,
+      CAST(net_revenue_rupiah AS CHAR) AS netRevenueRupiah, status, version,
+      recorded_by AS recordedBy, settled_by AS settledBy,
+      DATE_FORMAT(created_at, '%Y-%m-%dT%H:%i:%s.%fZ') AS createdAt,
+      DATE_FORMAT(settled_at, '%Y-%m-%dT%H:%i:%s.%fZ') AS settledAt,
+      DATE_FORMAT(updated_at, '%Y-%m-%dT%H:%i:%s.%fZ') AS updatedAt
+      FROM sales_sales_settlements WHERE shipment_id = ?`, [req.params.id]);
+    const row = settlements[0];
+    const settlement = row ? { ...row, version: Number(row.version),
+      createdAt: new Date(row.createdAt as string).toISOString(),
+      settledAt: new Date(row.settledAt as string).toISOString(),
+      updatedAt: new Date(row.updatedAt as string).toISOString() } : null;
+    res.json({ data: { ...toView(rows[0]), settlement }, meta: {} });
   });
 }

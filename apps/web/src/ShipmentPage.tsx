@@ -9,6 +9,19 @@ interface Reference {
   isActive: boolean;
   roles?: { roleCode: string; isActive: boolean }[];
 }
+interface SalesSettlementView {
+  id: string;
+  receivingReferenceNumber: string | null;
+  settlementDate: string;
+  acceptedQuantityGrams: string;
+  rejectQuantityGrams: string;
+  shrinkageQuantityGrams: string;
+  sellingPriceMicroRupiahPerKg: string;
+  grossRevenueRupiah: string;
+  discountRupiah: string;
+  netRevenueRupiah: string;
+  status: string;
+}
 interface Shipment {
   id: string;
   documentNumber: string;
@@ -19,6 +32,8 @@ interface Shipment {
   loadingQuantityGrams: string;
   loadingInventoryCostRupiah: string;
   status: 'IN_TRANSIT' | 'COMPLETED';
+  version: number;
+  settlement?: SalesSettlementView | null;
 }
 interface PageMeta {
   nextCursor: string | null;
@@ -451,6 +466,7 @@ export function ShipmentDetailPage() {
   const { id } = useParams();
   const location = useLocation();
   const [shipment, setShipment] = useState<Shipment | null>(null);
+  const [notice, setNotice] = useState('');
   const [references, setReferences] = useState<Reference[][]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -493,6 +509,7 @@ export function ShipmentDetailPage() {
       <header className="receipt-header">
         <h1>Pengiriman{shipment ? ' — ' + shipment.documentNumber : ''}</h1>
       </header>
+      {notice && <p role="status" className="receipt-notice">{notice}</p>}
       {warnings.map((warning, index) => (
         <div key={index} role="alert" className="shipment-warning">
           <strong>Pengiriman tersimpan. Periksa stok.</strong>
@@ -572,7 +589,30 @@ export function ShipmentDetailPage() {
           >
             Lihat pergerakan stok pengiriman
           </Link>
-          {shipment.status === 'IN_TRANSIT' && <DeliveryPreview shipmentId={shipment.id} />}
+          {shipment.status === 'IN_TRANSIT' && <DeliveryPreview shipmentId={shipment.id}
+            shipmentVersion={shipment.version} onCompleted={() => {
+              setNotice('Pengiriman diselesaikan.');
+              setRetry(value => value + 1);
+            }} />}
+          {shipment.settlement && (
+            <section className="receipt-card delivery-preview" aria-label="Hasil bongkar tersimpan">
+              <h2>Tiket / Bongkar (Hasil &amp; Penyelesaian)</h2>
+              <dl className="receipt-fields">
+                <div><dt>Jumlah Diterima</dt><dd>{kilograms(shipment.settlement.acceptedQuantityGrams)}</dd></div>
+                <div><dt>Jumlah Ditolak</dt><dd>{kilograms(shipment.settlement.rejectQuantityGrams)}</dd></div>
+                <div><dt>Susut</dt><dd>{kilograms(shipment.settlement.shrinkageQuantityGrams)}</dd></div>
+                <div><dt>No. Referensi Penerimaan</dt><dd>{shipment.settlement.receivingReferenceNumber ?? '—'}</dd></div>
+                <div><dt>Status Penyelesaian</dt><dd>{shipment.settlement.status === 'SETTLED' ? 'Diselesaikan' : shipment.settlement.status}</dd></div>
+                <div><dt>Tanggal Penyelesaian</dt><dd>{shipment.settlement.settlementDate.split('-').reverse().join('/')}</dd></div>
+                <div><dt>Harga Jual per Kg (Rupiah)</dt><dd>Rp{(BigInt(shipment.settlement.sellingPriceMicroRupiahPerKg) / 1_000_000n).toLocaleString('id-ID')}
+                  {BigInt(shipment.settlement.sellingPriceMicroRupiahPerKg) % 1_000_000n !== 0n
+                    ? ',' + (BigInt(shipment.settlement.sellingPriceMicroRupiahPerKg) % 1_000_000n).toString().padStart(6, '0').replace(/0+$/, '') : ''}</dd></div>
+                <div><dt>Nilai Kotor</dt><dd>Rp{BigInt(shipment.settlement.grossRevenueRupiah).toLocaleString('id-ID')}</dd></div>
+                <div><dt>Diskon</dt><dd>Rp{BigInt(shipment.settlement.discountRupiah).toLocaleString('id-ID')}</dd></div>
+                <div><dt>Nilai Bersih</dt><dd>Rp{BigInt(shipment.settlement.netRevenueRupiah).toLocaleString('id-ID')}</dd></div>
+              </dl>
+            </section>
+          )}
         </>
       )}
     </section>

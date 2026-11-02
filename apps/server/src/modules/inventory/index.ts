@@ -14,3 +14,5 @@ export interface PurchaseReceiptAcceptedV1Payload {
 export { recordPurchaseReceipt } from './record-purchase-receipt.js';
 
 export { dispatchForShipment } from './dispatch-for-shipment.js';
+
+export { ShipmentCostAllocationPolicy } from './domain/shipment-cost-allocation/shipment-cost-allocation-policy.js';
