@@ -3,6 +3,8 @@ import type { MikroORM } from '@mikro-orm/mysql';
 import type { Express } from 'express';
 import type { AppRepositories } from '../../app.js';
 import { PurchaseReceipt, PurchaseReceiptRuleError } from './domain/purchase-receipt/purchase-receipt.js';
+import { recordPurchaseReceipt } from '../inventory/index.js';
+
 interface ReceiptRow {
   id: string;
   document_number: string;
@@ -123,6 +125,12 @@ export function registerPurchaseReceiptRoutes(app: Express, orm: MikroORM, maste
           (id, product_id, supplier_id, source_purchase_receipt_id, effective_date,
            unit_price_microrupiah_per_kg, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)`,
           [randomUUID(), receipt.productId, receipt.supplierId, id, receipt.receiptDate, receipt.unitPrice.toString(), receipt.createdAt]);
+        await recordPurchaseReceipt(em, {
+          purchaseReceiptId: receipt.id, documentNumber: receipt.documentNumber, receiptDate: receipt.receiptDate,
+          supplierId: receipt.supplierId, productId: receipt.productId, warehouseId: receipt.warehouseId,
+          quantityGrams: receipt.quantity.toString(), unitPriceMicroRupiahPerKg: receipt.unitPrice.toString(),
+          totalAmountRupiah: receipt.totalAmount.toString(), requestLoanDeduction: false,
+        });
         const rows = await em.execute<ReceiptRow[]>(receiptSelect + ' WHERE id = ?', [id]);
         return toJson(rows[0]!);
       });
