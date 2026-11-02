@@ -1,4 +1,4 @@
-import { Menu, Package, PanelLeftClose, PanelLeftOpen, X } from "lucide-react";
+import { Menu, Package, PanelLeftClose, PanelLeftOpen, X, ReceiptText } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import {
   Link,
@@ -21,12 +21,15 @@ import ProductPage, {
 } from "./ProductPage.js";
 import WarehousePage, { WarehouseCreatePage, WarehouseDetailPage, WarehouseEditPage } from "./WarehousePage.js";
 
+import PurchaseReceiptPage, { PurchaseReceiptCreatePage, PurchaseReceiptDetailPage } from "./PurchaseReceiptPage.js";
+
 export default function App() {
   const [collapsed, setCollapsed] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const drawerRef = useRef<HTMLDialogElement>(null);
   const location = useLocation();
-  const title = location.pathname.startsWith("/master-data/products")
+  const isProcurement = location.pathname.startsWith("/procurement/");
+  const title = isProcurement ? "Penerimaan Pembelian" : location.pathname.startsWith("/master-data/products")
     ? "Produk"
     : location.pathname.startsWith("/master-data/partners")
       ? "Mitra"
@@ -86,7 +89,7 @@ export default function App() {
             <Link
               to="/master-data/products"
               className="erp-module-link"
-              aria-current="page"
+              aria-current={isProcurement ? undefined : "page"}
               aria-label="Data Master"
               title={collapsed ? "Data Master" : undefined}
             >
@@ -94,6 +97,12 @@ export default function App() {
               <span className={collapsed ? "sr-only" : undefined}>
                 Data Master
               </span>
+            </Link>
+            <Link to="/procurement/purchase-receipts" className="erp-module-link"
+              aria-current={isProcurement ? "page" : undefined} aria-label="Pembelian"
+              title={collapsed ? "Pembelian" : undefined}>
+              <ReceiptText size={20} aria-hidden="true" />
+              <span className={collapsed ? "sr-only" : undefined}>Pembelian</span>
             </Link>
           </nav>
           <div className="erp-sidebar-footer">
@@ -120,12 +129,17 @@ export default function App() {
         </aside>
 
         <main id="main-content" tabIndex={-1} className="erp-main">
-          <nav aria-label="Navigasi Data Master" className="erp-tabs">
-            <NavLink to="/master-data/products">Produk</NavLink>
-            <NavLink to="/master-data/partners">Mitra</NavLink>
-            <NavLink to="/master-data/warehouses">Gudang</NavLink>
+          <nav aria-label={isProcurement ? "Navigasi Pembelian" : "Navigasi Data Master"} className="erp-tabs">
+            {isProcurement ? <NavLink to="/procurement/purchase-receipts">Penerimaan Pembelian</NavLink> : <>
+              <NavLink to="/master-data/products">Produk</NavLink>
+              <NavLink to="/master-data/partners">Mitra</NavLink>
+              <NavLink to="/master-data/warehouses">Gudang</NavLink>
+            </>}
           </nav>
           <Routes>
+            <Route path="/procurement/purchase-receipts" element={<PurchaseReceiptPage />} />
+            <Route path="/procurement/purchase-receipts/new" element={<PurchaseReceiptCreatePage />} />
+            <Route path="/procurement/purchase-receipts/:id" element={<PurchaseReceiptDetailPage />} />
             <Route path="/master-data/warehouses" element={<WarehousePage />} />
             <Route path="/master-data/warehouses/new" element={<WarehouseCreatePage />} />
             <Route path="/master-data/warehouses/:id" element={<WarehouseDetailPage />} />
@@ -210,13 +224,18 @@ export default function App() {
           <Link
             to="/master-data/products"
             className="erp-module-link"
-            aria-current="page"
+            aria-current={isProcurement ? undefined : "page"}
             onClick={() => {
               drawerRef.current?.close();
             }}
           >
             <Package size={20} aria-hidden="true" />
             <span>Data Master</span>
+          </Link>
+          <Link to="/procurement/purchase-receipts" className="erp-module-link"
+            aria-current={isProcurement ? "page" : undefined}
+            onClick={() => drawerRef.current?.close()}>
+            <ReceiptText size={20} aria-hidden="true" /><span>Pembelian</span>
           </Link>
         </nav>
       </dialog>
