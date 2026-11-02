@@ -1,5 +1,6 @@
+import ShipmentPage, { ShipmentCreatePage, ShipmentDetailPage } from "./ShipmentPage.js";
 import InventoryPage from "./InventoryPage.js";
-import { Menu, Package, PanelLeftClose, PanelLeftOpen, X, ReceiptText, Boxes } from "lucide-react";
+import { Menu, Package, PanelLeftClose, PanelLeftOpen, X, ReceiptText, Boxes, Truck } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import {
   Link,
@@ -29,9 +30,10 @@ export default function App() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const drawerRef = useRef<HTMLDialogElement>(null);
   const location = useLocation();
+  const isSales = location.pathname.startsWith("/sales/");
   const isProcurement = location.pathname.startsWith("/procurement/");
   const isInventory = location.pathname.startsWith("/inventory/");
-  const title = isInventory ? (location.pathname.endsWith("/movements") ? "Pergerakan Stok" : "Saldo Stok") : isProcurement ? "Penerimaan Pembelian" : location.pathname.startsWith("/master-data/products")
+  const title = isSales ? "Pengiriman" : isInventory ? (location.pathname.endsWith("/movements") ? "Pergerakan Stok" : "Saldo Stok") : isProcurement ? "Penerimaan Pembelian" : location.pathname.startsWith("/master-data/products")
     ? "Produk"
     : location.pathname.startsWith("/master-data/partners")
       ? "Mitra"
@@ -91,7 +93,7 @@ export default function App() {
             <Link
               to="/master-data/products"
               className="erp-module-link"
-              aria-current={isProcurement || isInventory ? undefined : "page"}
+              aria-current={isSales || isProcurement || isInventory ? undefined : "page"}
               aria-label="Data Master"
               title={collapsed ? "Data Master" : undefined}
             >
@@ -111,6 +113,12 @@ export default function App() {
               title={collapsed ? "Persediaan" : undefined}>
               <Boxes size={20} aria-hidden="true" />
               <span className={collapsed ? "sr-only" : undefined}>Persediaan</span>
+            </Link>
+            <Link to="/sales/shipments" className="erp-module-link"
+              aria-current={isSales ? "page" : undefined} aria-label="Penjualan"
+              title={collapsed ? "Penjualan" : undefined}>
+              <Truck size={20} aria-hidden="true" />
+              <span className={collapsed ? "sr-only" : undefined}>Penjualan</span>
             </Link>
           </nav>
           <div className="erp-sidebar-footer">
@@ -137,8 +145,8 @@ export default function App() {
         </aside>
 
         <main id="main-content" tabIndex={-1} className="erp-main">
-          <nav aria-label={isInventory ? "Navigasi Persediaan" : isProcurement ? "Navigasi Pembelian" : "Navigasi Data Master"} className="erp-tabs">
-            {isInventory ? <>
+          <nav aria-label={isSales ? "Navigasi Penjualan" : isInventory ? "Navigasi Persediaan" : isProcurement ? "Navigasi Pembelian" : "Navigasi Data Master"} className="erp-tabs">
+            {isSales ? <NavLink to="/sales/shipments">Pengiriman</NavLink> : isInventory ? <>
               <NavLink to="/inventory/balances">Saldo Stok</NavLink>
               <NavLink to="/inventory/movements">Pergerakan Stok</NavLink>
             </> : isProcurement ? <NavLink to="/procurement/purchase-receipts">Penerimaan Pembelian</NavLink> : <>
@@ -148,6 +156,9 @@ export default function App() {
             </>}
           </nav>
           <Routes>
+            <Route path="/sales/shipments" element={<ShipmentPage />} />
+            <Route path="/sales/shipments/new" element={<ShipmentCreatePage />} />
+            <Route path="/sales/shipments/:id" element={<ShipmentDetailPage />} />
             <Route path="/inventory/balances" element={<InventoryPage />} />
             <Route path="/inventory/movements" element={<InventoryPage movements />} />
             <Route path="/procurement/purchase-receipts" element={<PurchaseReceiptPage />} />
@@ -237,7 +248,7 @@ export default function App() {
           <Link
             to="/master-data/products"
             className="erp-module-link"
-            aria-current={isProcurement || isInventory ? undefined : "page"}
+            aria-current={isSales || isProcurement || isInventory ? undefined : "page"}
             onClick={() => {
               drawerRef.current?.close();
             }}
@@ -253,6 +264,10 @@ export default function App() {
           <Link to="/inventory/balances" className="erp-module-link"
             aria-current={isInventory ? "page" : undefined} onClick={() => drawerRef.current?.close()}>
             <Boxes size={20} aria-hidden="true" /><span>Persediaan</span>
+          </Link>
+          <Link to="/sales/shipments" className="erp-module-link"
+            aria-current={isSales ? "page" : undefined} onClick={() => drawerRef.current?.close()}>
+            <Truck size={20} aria-hidden="true" /><span>Penjualan</span>
           </Link>
         </nav>
       </dialog>

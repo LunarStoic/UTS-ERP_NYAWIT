@@ -320,7 +320,7 @@ function InventoryList({ movements }: { movements: boolean }) {
                           Penerimaan Pembelian
                         </Link>
                       ) : (
-                        row.sourceType
+                        row.sourceType === "Shipment" ? <Link to={"/sales/shipments/" + row.sourceId}>Pengiriman</Link> : row.sourceType
                       )}
                     </td>
                     <td className="inventory-number">{kilograms(row.quantityInGrams)}</td>

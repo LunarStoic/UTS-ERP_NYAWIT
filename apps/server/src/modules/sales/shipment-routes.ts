@@ -1,4 +1,4 @@
-import { randomUUID } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import type { Express } from 'express';
 import type { MikroORM } from '@mikro-orm/mysql';
 import type { AppRepositories } from '../../app.js';
@@ -190,6 +190,157 @@ export function registerShipmentRoutes(app: Express, orm: MikroORM, masters: App
       throw error;
     }
   });
+  app.get('/api/v1/sales/shipments', async (req, res) => {
+    const reject = (code: string, message: string) => {
+      res.status(400).json({ error: { code, message, details: {} } });
+    };
+    const keys = [
+      'status',
+      'customerId',
+      'productId',
+      'warehouseId',
+      'dateFrom',
+      'dateTo',
+      'limit',
+      'cursor',
+    ] as const;
+    const query: Partial<Record<(typeof keys)[number], string>> = {};
+    for (const key of keys) {
+      const value = req.query[key];
+      if (value !== undefined && typeof value !== 'string') {
+        reject('MALFORMED_REQUEST', 'Parameter pada alamat harus berupa satu nilai teks.');
+        return;
+      }
+      if (value !== undefined) query[key] = value;
+    }
+    if (query.status !== undefined && !['IN_TRANSIT', 'COMPLETED'].includes(query.status)) {
+      reject(
+        'SHIPMENT_QUERY_INVALID_STATUS',
+        "Status harus salah satu dari 'IN_TRANSIT', 'COMPLETED'.",
+      );
+      return;
+    }
+    const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    for (const key of ['customerId', 'productId', 'warehouseId'] as const) {
+      if (query[key] !== undefined && !uuid.test(query[key]!)) {
+        reject('SHIPMENT_QUERY_INVALID_REFERENCE_ID', `${key} harus berupa id yang valid.`);
+        return;
+      }
+    }
+    for (const key of ['dateFrom', 'dateTo'] as const) {
+      const value = query[key];
+      if (
+        value !== undefined &&
+        (!/^\d{4}-\d{2}-\d{2}$/.test(value) ||
+          !Number.isFinite(Date.parse(value + 'T00:00:00Z')) ||
+          new Date(value + 'T00:00:00Z').toISOString().slice(0, 10) !== value)
+      ) {
+        reject(
+          'SHIPMENT_QUERY_INVALID_DATE',
+          `${key} harus berupa tanggal yang valid (TTTT-BB-HH).`,
+        );
+        return;
+      }
+    }
+    if (query.dateFrom && query.dateTo && query.dateFrom > query.dateTo) {
+      reject(
+        'SHIPMENT_QUERY_INVALID_DATE_RANGE',
+        'Tanggal awal tidak boleh setelah tanggal akhir.',
+      );
+      return;
+    }
+    const limit = query.limit === undefined ? 50 : Number(query.limit);
+    if (!Number.isInteger(limit) || limit < 1 || limit > 200) {
+      reject(
+        'SHIPMENT_QUERY_INVALID_LIMIT',
+        'Batas data per halaman harus bilangan bulat antara 1 dan 200.',
+      );
+      return;
+    }
+    const filtersFingerprint = createHash('sha256')
+      .update(
+        JSON.stringify({
+          status: query.status ?? null,
+          customerId: query.customerId ?? null,
+          productId: query.productId ?? null,
+          warehouseId: query.warehouseId ?? null,
+          dateFrom: query.dateFrom ?? null,
+          dateTo: query.dateTo ?? null,
+        }),
+      )
+      .digest('hex')
+      .slice(0, 16);
+    let after: { shipmentDate: string; id: string } | undefined;
+    if (query.cursor !== undefined) {
+      try {
+        const cursor = JSON.parse(Buffer.from(query.cursor, 'base64url').toString('utf8'));
+        if (
+          !cursor ||
+          typeof cursor.shipmentDate !== 'string' ||
+          typeof cursor.id !== 'string' ||
+          cursor.filtersFingerprint !== filtersFingerprint ||
+          !uuid.test(cursor.id) ||
+          !/^\d{4}-\d{2}-\d{2}$/.test(cursor.shipmentDate)
+        )
+          throw Error();
+        after = cursor;
+      } catch {
+        reject(
+          'SHIPMENT_QUERY_INVALID_CURSOR',
+          'Penanda halaman tidak valid, atau dibuat untuk filter yang berbeda.',
+        );
+        return;
+      }
+    }
+    const conditions: string[] = [];
+    const values: string[] = [];
+    for (const [key, column] of [
+      ['status', 'status'],
+      ['customerId', 'customer_id'],
+      ['productId', 'product_id'],
+      ['warehouseId', 'warehouse_id'],
+    ] as const) {
+      if (query[key] !== undefined) {
+        conditions.push(`${column} = ?`);
+        values.push(query[key]!);
+      }
+    }
+    if (query.dateFrom) {
+      conditions.push('shipment_date >= ?');
+      values.push(query.dateFrom);
+    }
+    if (query.dateTo) {
+      conditions.push('shipment_date <= ?');
+      values.push(query.dateTo);
+    }
+    if (after) {
+      conditions.push('(shipment_date, id) < (?, ?)');
+      values.push(after.shipmentDate, after.id);
+    }
+    const where = conditions.length ? ' WHERE ' + conditions.join(' AND ') : '';
+    const rows = await orm.em
+      .fork()
+      .execute<Record<string, unknown>[]>(
+        selectShipment + where + ' ORDER BY shipment_date DESC, id DESC LIMIT ?',
+        [...values, limit + 1],
+      );
+    const hasMore = rows.length > limit;
+    const page = rows.slice(0, limit);
+    const last = page.at(-1);
+    const nextCursor =
+      hasMore && last
+        ? Buffer.from(
+            JSON.stringify({
+              shipmentDate: last.shipmentDate,
+              id: last.id,
+              filtersFingerprint,
+            }),
+            'utf8',
+          ).toString('base64url')
+        : null;
+    res.status(200).json({ data: page.map(toView), meta: { nextCursor, hasMore, limit } });
+  });
+
   app.get('/api/v1/sales/shipments/:id', async (req, res) => {
     const rows = await orm.em
       .fork()
