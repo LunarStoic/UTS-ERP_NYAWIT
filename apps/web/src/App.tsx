@@ -10,7 +10,11 @@ import {
 } from "react-router";
 
 import PartnerPage from "./PartnerPage.js";
-import ProductPage from "./ProductPage.js";
+import ProductPage, {
+  ProductCreatePage,
+  ProductDetailPage,
+  ProductEditPage,
+} from "./ProductPage.js";
 import WarehousePage, { WarehouseCreatePage, WarehouseDetailPage, WarehouseEditPage } from "./WarehousePage.js";
 
 export default function App() {
@@ -123,6 +127,9 @@ export default function App() {
             <Route path="/master-data/warehouses/:id" element={<WarehouseDetailPage />} />
             <Route path="/master-data/warehouses/:id/edit" element={<WarehouseEditPage />} />
             <Route path="/master-data/products" element={<ProductPage />} />
+            <Route path="/master-data/products/new" element={<ProductCreatePage />} />
+            <Route path="/master-data/products/:id" element={<ProductDetailPage />} />
+            <Route path="/master-data/products/:id/edit" element={<ProductEditPage />} />
             <Route path="/master-data/partners" element={<PartnerPage />} />
             <Route
               path="/warehouses"
