@@ -9,7 +9,11 @@ import {
   useLocation,
 } from "react-router";
 
-import PartnerPage from "./PartnerPage.js";
+import PartnerPage, {
+  PartnerCreatePage,
+  PartnerDetailPage,
+  PartnerEditPage,
+} from "./PartnerPage.js";
 import ProductPage, {
   ProductCreatePage,
   ProductDetailPage,
@@ -131,6 +135,9 @@ export default function App() {
             <Route path="/master-data/products/:id" element={<ProductDetailPage />} />
             <Route path="/master-data/products/:id/edit" element={<ProductEditPage />} />
             <Route path="/master-data/partners" element={<PartnerPage />} />
+            <Route path="/master-data/partners/new" element={<PartnerCreatePage />} />
+            <Route path="/master-data/partners/:id" element={<PartnerDetailPage />} />
+            <Route path="/master-data/partners/:id/edit" element={<PartnerEditPage />} />
             <Route
               path="/warehouses"
               element={<Navigate to="/master-data/warehouses" replace />}
